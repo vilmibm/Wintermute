@@ -72,16 +72,39 @@ Bot.prototype.on_disconnect = function() {
 };
 
 Bot.prototype.on_data = function(chunk) {
-  console.log('got chunk: ' + chunk);
   this.buffer += chunk;
-  var offset = this.buffer.indexOf("\r\n");
-  if (offset < 0) {
-    return;
-  }
-  var data = this.buffer.slice(0, offset);
-  this.buffer = this.buffer.slice(offset+2);
+  while (this.buffer) {
+    var offset = this.buffer.indexOf("\r\n");
+    if (offset < 0) {
+      console.log('RETURNING');
+      return;
+    }
+    var data = this.buffer.slice(0, offset);
+    this.buffer = this.buffer.slice(offset+2);
 
-  console.log(data);
+    // TODO this is pretty ugly but eh i hate switch statements
+    if (data.match(/PING/)) {
+      this.raw(data.replace(/PING/, 'PONG'));
+    }
+
+    if (data.match(/PRIVMSG/)) {
+      var msg = {};
+      console.log('MESSAGE: '+data);
+      msg.sender = data.match(/:(.+)\!/)[1];
+      msg.channel = data.match(/PRIVMSG (.+) :/)[1];
+      msg.text = data.match(/PRIVMSG.*:(.+)$/)[1];
+      this.emit('message', msg);
+    }
+  }
+};
+
+// Actions
+Bot.prototype.send = function(channel, text) {
+  this.raw('PRIVMSG ' + channel + ' :' + text);
+};
+
+Bot.prototype.join = function(channel) {
+  this.raw('JOIN ' + channel);
 };
 
 // plugins
@@ -106,3 +129,12 @@ try {
 
 var bot = new Bot(config);
 bot.connect();
+bot.on('message', function(msg) {
+  console.log('I RECEIVED A MESSAGE');
+  console.log(msg);
+});
+
+exports = bot;
+
+var repl = require('repl');
+repl.start('irc>').context.bot = bot;
