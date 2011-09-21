@@ -79,13 +79,25 @@ Bot.prototype.on_data = function(chunk) {
   console.log(data);
 };
 
-
-// TODO
-
 // plugins
 // TODO
 
 // personality
 // TODO
 
-exports.Bot = Bot;
+/* CLI processing */
+// defaults to ~/.wintermuterc
+// or specify
+
+var rc = path.join(process.env.HOME, '.wintermuterc') || process.argv[2];
+
+var config = {};
+try {
+  config = JSON.parse(fs.readFileSync(rc, 'utf8'));
+} catch(e) {
+  console.error('Caught error reading '+rc+': '+e);
+  process.exit();
+}
+
+var bot = new Bot(config);
+bot.connect();
