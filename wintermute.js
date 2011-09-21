@@ -1,7 +1,12 @@
 var events = require('events');
+var fs = require('fs');
 var net = require('net');
+var path = require('path');
 var sys = require('sys');
 
+// "main" portion at bottom
+// TODO abstract bot,irc stuff into lib/
+// TODO move this file to bin/
 
 function Bot(config) {
   events.EventEmitter.call(this);
