@@ -10,18 +10,48 @@ var sys = require('sys');
 
 function Bot(config) {
   events.EventEmitter.call(this);
+
   this.config = config || {};
-  this.config.host = config.host || '127.0.0.1';
-  this.config.port = config.port || 6667;
-  this.config.nick = config.nick || 'wintermute';
-  this.config.user = config.user || 'wintermute';
+  this.config.host = this.config.host || '127.0.0.1';
+  this.config.port = this.config.port || 6667;
+  this.config.nick = this.config.nick || 'wintermute';
+  this.config.user = this.config.user || 'wintermute';
   this.config.password = config.password;
+  this.config.plugins_dir = this.config.plugins_dir || './plugins';
+  this.config.default_plugins = this.config.default_plugins || [];
+
+  this.plugins.active = [];
+  this.plugins.inactive = [];
 
   this.buffer = '';
 
   this.on('connect', this.on_connect);
   this.on('disconnect', this.on_disconnect);
   this.on('data', this.on_data);
+
+  this.config.default_plugins.forEach(function(plugin_path) {
+    var full_plugin_path = path.join(this.config.plugins_dir, plugin_path;
+    try {
+      var plugin = require(full_plugin_path);
+      for (evnt in plugin.hooks) {
+        if (!plugin.hooks.hasOwnProperty(evnt)) { return; }
+        plugin.hooks[evnt].forEach(function(cb) {
+          this.on(evnt, cb);
+        });
+      }
+      this.plugins.active.push(full_plugin_path);
+    }
+    catch (exc) {
+      console.error('Error loading plugin "'+full_plugin_path+'": '+exc);
+      this.plugins.inactive.push(full_plugin_path);
+    };
+  });
+
+  fs.readdir(this.config.plugins_dir, function(err, files) {
+    this.emit(
+  });
+
+  this.emit('plugin_state_change', 'initial');
 }
 sys.inherits(Bot, events.EventEmitter);
 
