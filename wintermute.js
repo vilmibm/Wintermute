@@ -10,12 +10,12 @@ var sys = require('sys');
 
 function Bot(config) {
   events.EventEmitter.call(this);
-  config = config || {};
-  this.host = config.host || '127.0.0.1';
-  this.port = config.port || 6667;
-  this.nick = config.nick || 'wintermute';
-  this.user = config.user || 'wintermute';
-  this.password = config.password;
+  this.config = config || {};
+  this.config.host = config.host || '127.0.0.1';
+  this.config.port = config.port || 6667;
+  this.config.nick = config.nick || 'wintermute';
+  this.config.user = config.user || 'wintermute';
+  this.config.password = config.password;
 
   this.buffer = '';
 
@@ -28,7 +28,7 @@ sys.inherits(Bot, events.EventEmitter);
 // core Bot functionality
 Bot.prototype.connect = function() {
   var that = this;
-  this.connection = net.createConnection(this.port, this.host);
+  this.connection = net.createConnection(this.config.port, this.config.host);
   this.connection.setEncoding('utf8');
   this.connection.setTimeout(60*60*10);
 
@@ -56,11 +56,11 @@ Bot.prototype.raw = function(txt) {
 // Events
 Bot.prototype.on_connect = function() {
   console.log('connected');
-  if (this.password) {
-    this.raw('PASS ' + this.password);
+  if (this.config.password) {
+    this.raw('PASS ' + this.config.password);
   }
-  this.raw('NICK '+this.nick);
-  this.raw('USER ' + this.user + ' 0 * : tessier ashpool');
+  this.raw('NICK '+this.config.nick);
+  this.raw('USER ' + this.config.user + ' 0 * : tessier ashpool');
 };
 
 Bot.prototype.on_disconnect = function() {
