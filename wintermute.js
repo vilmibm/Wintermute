@@ -53,10 +53,6 @@ Bot.prototype.raw = function(txt) {
   this.connection.write(txt, 'utf8');
 };
 
-Bot.prototype.join = function(channel) {
-  this.raw('JOIN ' + channel);
-};
-
 // Events
 Bot.prototype.on_connect = function() {
   console.log('connected');
@@ -76,7 +72,6 @@ Bot.prototype.on_data = function(chunk) {
   while (this.buffer) {
     var offset = this.buffer.indexOf("\r\n");
     if (offset < 0) {
-      console.log('RETURNING');
       return;
     }
     var data = this.buffer.slice(0, offset);
@@ -89,7 +84,6 @@ Bot.prototype.on_data = function(chunk) {
 
     if (data.match(/PRIVMSG/)) {
       var msg = {};
-      console.log('MESSAGE: '+data);
       msg.sender = data.match(/:(.+)\!/)[1];
       msg.channel = data.match(/PRIVMSG (.+) :/)[1];
       msg.text = data.match(/PRIVMSG.*:(.+)$/)[1];
@@ -129,10 +123,6 @@ try {
 
 var bot = new Bot(config);
 bot.connect();
-bot.on('message', function(msg) {
-  console.log('I RECEIVED A MESSAGE');
-  console.log(msg);
-});
 
 exports = bot;
 
