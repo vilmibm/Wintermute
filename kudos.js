@@ -1,11 +1,14 @@
-var wintermute = require('./wintermute');
+var Plugin = require('./lib/wintermute').Plugin;
+var plugin = new Plugin();
 
-wintermute.on('message', function(msg) {
+plugin.on('event', function(bot, msg) {
   if (msg.text.match(/^.kudos/)) {
     // connect to datastore
-    this.send(msg.channel, 'TODO kudos leaderboard');
+    bot.send(msg.channel, 'TODO kudos leaderboard');
   }
 });
+
+exports.plugin = plugin;
 
 // join
 // part
