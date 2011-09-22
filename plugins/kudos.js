@@ -1,4 +1,4 @@
-var Plugin = require('./lib/wintermute').Plugin;
+var Plugin = require('/home/nksmith/wintermute/lib/wintermute').Plugin;
 var plugin = new Plugin();
 
 plugin.on('event', function(bot, msg) {

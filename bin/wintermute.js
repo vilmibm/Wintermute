@@ -20,6 +20,7 @@ function Bot(config) {
   this.config.plugins_dir = this.config.plugins_dir || './plugins';
   this.config.default_plugins = this.config.default_plugins || [];
 
+  this.plugins = {};
   this.plugins.active = [];
   this.plugins.inactive = [];
 
@@ -29,29 +30,26 @@ function Bot(config) {
   this.on('disconnect', this.on_disconnect);
   this.on('data', this.on_data);
 
+  var that = this;
   this.config.default_plugins.forEach(function(plugin_path) {
-    var full_plugin_path = path.join(this.config.plugins_dir, plugin_path;
+    var full_plugin_path = path.join(that.config.plugins_dir, plugin_path);
     try {
       var plugin = require(full_plugin_path);
+      // TODO use this.emit('plugin_state_change', full_plugin_path, 'reload');
       for (evnt in plugin.hooks) {
         if (!plugin.hooks.hasOwnProperty(evnt)) { return; }
         plugin.hooks[evnt].forEach(function(cb) {
-          this.on(evnt, cb);
+          that.on(evnt, cb);
         });
       }
-      this.plugins.active.push(full_plugin_path);
+      that.plugins.active.push(full_plugin_path);
     }
     catch (exc) {
       console.error('Error loading plugin "'+full_plugin_path+'": '+exc);
-      this.plugins.inactive.push(full_plugin_path);
+      that.plugins.inactive.push(full_plugin_path);
     };
   });
 
-  fs.readdir(this.config.plugins_dir, function(err, files) {
-    this.emit(
-  });
-
-  this.emit('plugin_state_change', 'initial');
 }
 sys.inherits(Bot, events.EventEmitter);
 
