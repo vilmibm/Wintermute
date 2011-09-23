@@ -45,6 +45,26 @@ function Bot(config) {
   this.on('disconnect', this.on_disconnect);
   this.on('data', this.on_data);
 
+  this.on('message', function(message){
+    if (! /PING|PRIVMSG|NOTICE/.test(message)) {
+      console.log('<', message);
+    }
+    this.emit(message.command, message);
+  });
+  this.on('PING', funciton(message){
+    this.raw({command:'PONG', params:'localhost'});
+  });
+  this.on('PRIVMSG', funciton(message){
+    message.sender = message.params[0];
+    message.text = message.params[1];
+    console.log('<', message.sender, ':', message.text);
+  });
+  this.on('NOTICE', funciton(message){
+    message.sender = message.params[0];
+    message.text = message.params[1];
+    console.log('!', message.sender, ':', message.text);
+  });
+
   // FIXME: is this a node convention!? Can't we use "this_bot" or something?
   var that = this;
 
@@ -84,9 +104,6 @@ Bot.prototype.connect = function() {
   this.connection.on('connect', function() {that.emit('connect')});
   this.connection.on('data', function(chunk) {that.emit('data', chunk)});
   this.connection.on('disconnect', function() {that.emit('disconnect')});
-  this.connection.on('message', function(message) {
-    console.log('message received:', message.sender, ':', message.text);
-  });
 };
 
 Bot.prototype.disconnect = function() {
@@ -94,8 +111,6 @@ Bot.prototype.disconnect = function() {
     this.connection.close();
   }
 };
-
-
 
 Bot.prototype.raw = function(message) {
   // message can be a string of characters to dump to the server, or an object with attributes:
@@ -175,19 +190,7 @@ Bot.prototype.on_data = function(chunk) {
         ? res[6].split(' ').slice(1).concat(res[7])
         : res[6].split(' ').slice(1)
     };
-
-    switch (message.command) {
-      case 'PING':
-        this.raw({command:'PONG', params:'localhost'});
-        console.log('ping');
-        break;
-      case 'PRIVMSG':
-        message.sender = message.params[0];
-        message.text = message.params[1];
-        this.emit('message', message)
-      default:
-        console.log('<', message);
-    }
+    self.emit('message', message);
   }
 };
 
