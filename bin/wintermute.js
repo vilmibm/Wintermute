@@ -113,20 +113,19 @@ Bot.prototype.raw = function(message) {
     console.log('Message too long: ' + message);
     return;
   }
-  console.log('>', message);
   if (typeof(message) == 'string') {
     this.connection.write(message + "\r\n", 'utf8');
   } else {
     this.connection.write(''
-        + message.prefix
+        + (message.prefix
           ? ':' + message.prefix + ' '
-          : ''
+          : '')
         + message.command
-        + message.params
-          ? ' ' + typeof(message.params) == 'string'
+        + (message.params
+          ? ' ' + (typeof(message.params) == 'string'
             ? ':' + message.params
-            : message.params.slice(0, -1).concat(':' + message.params.slice(-1)).join(' ')
-          : ''
+            : message.params.slice(0, -1).concat(':' + message.params.slice(-1)).join(' '))
+          : '')
         + "\r\n",
         'utf8');
   }
@@ -135,12 +134,12 @@ Bot.prototype.raw = function(message) {
 // Events
 Bot.prototype.on_connect = function() {
   console.log('connected');
-  if (this.config.password) {
-    this.raw({command: 'PASS', params: this.config.password});
-  }
   this.raw({command: 'NICK', params: this.config.nick});
   this.raw({command: 'USER', params: [
     this.config.user, 0, '*', this.config.realname]});
+  if (this.config.password) {
+    this.raw({command: 'PASS', params: this.config.password});
+  }
 };
 
 Bot.prototype.on_disconnect = function() {
@@ -160,6 +159,10 @@ Bot.prototype.on_data = function(chunk) {
 
     // build a message object containing all the parts
     var res = irc_lineparse_re.exec(line);
+
+    if (! res) {
+      console.log('Regex fail!', line);
+    }
 
     var message = {
       raw: line, // Whole line
