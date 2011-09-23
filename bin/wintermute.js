@@ -84,6 +84,9 @@ Bot.prototype.connect = function() {
   this.connection.on('connect', function() {that.emit('connect')});
   this.connection.on('data', function(chunk) {that.emit('data', chunk)});
   this.connection.on('disconnect', function() {that.emit('disconnect')});
+  this.connection.on('message', function(message) {
+    console.log('message received:', message.sender, ':', message.text);
+  });
 };
 
 Bot.prototype.disconnect = function() {
@@ -110,6 +113,7 @@ Bot.prototype.raw = function(message) {
     console.log('Message too long: ' + message);
     return;
   }
+  console.log('>', message);
   if (typeof(message) == 'string') {
     this.connection.write(message + "\r\n", 'utf8');
   } else {
@@ -172,13 +176,14 @@ Bot.prototype.on_data = function(chunk) {
     switch (message.command) {
       case 'PING':
         this.raw({command:'PONG', params:'localhost'});
+        console.log('ping');
         break;
       case 'PRIVMSG':
         message.sender = message.params[0];
         message.text = message.params[1];
         this.emit('message', message)
       default:
-        console.log(message);
+        console.log('<', message);
     }
   }
 };
