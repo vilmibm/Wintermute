@@ -1,0 +1,7 @@
+{ "host":"irc.ddtc.cmgdigital.com",
+  "password":"NopeChuckTesta",
+  "user":"your_ad_username",
+  "nick":"winteryou",
+  "plugins_dir":"/some/abs/path",
+  "default_plugins":["kudos"]
+}
