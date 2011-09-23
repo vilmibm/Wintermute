@@ -16,7 +16,7 @@ function obj_update(obj, other) {
 
 // FIXME where should this live?
 // FIXME break up for documentation
-var irc_lineparse_re = /^(?::([^@! ]*)(?:(?:!([^@]*))?@([^ ]*))? )?([^ ]+)((?: [^: ][^ ]*){0,14})(?: :?(.*))?$/
+var irc_lineparse_re = /^(?::(([^@! ]*)(?:(?:!([^@]*))?@([^ ]*))?) )?([^ ]+)((?: [^: ][^ ]*){0,14})(?: :?(.*))?$/
 
 // "main" portion at bottom
 // TODO abstract bot,irc stuff into lib/
@@ -92,29 +92,51 @@ Bot.prototype.disconnect = function() {
   }
 };
 
-Bot.prototype.raw = function(txt) {
+
+
+Bot.prototype.raw = function(message) {
+  // message can be a string of characters to dump to the server, or an object with attributes:
+  // prefix: string
+  // command: string
+  // params: string or Array of strings. If Array, only the last may contain
+  // spaces.
   if (this.connection.readyState !== 'open') {
     console.error('raw: not connected');
     return;
   }
 
-  if (txt.length > 510) {
-    console.log('Message too long: ' + txt);
+  // TODO instead of this, break into multiple messages, if possible.
+  if (message.length > 510) {
+    console.log('Message too long: ' + message);
     return;
   }
-
-  txt = txt + "\r\n";
-  this.connection.write(txt, 'utf8');
+  if (typeOf(message) == 'string') {
+    this.connection.write(message + "\r\n", 'utf8');
+  } else {
+    this.connection.write(''
+        + message.prefix
+          ? ':' + message.prefix + ' '
+          : ''
+        + message.command
+        + message.params
+          ? ' ' + typeOf(message.params) == 'string'
+            ? ':' + message.params
+            : message.params.slice(0, -1).concat(':' + message.params.slice(-1)).join(' ')
+          : ''
+        + "\r\n",
+        'utf8');
+  }
 };
 
 // Events
 Bot.prototype.on_connect = function() {
   console.log('connected');
   if (this.config.password) {
-    this.raw('PASS ' + this.config.password);
+    this.raw({command: 'PASS', params: this.config.password});
   }
-  this.raw('NICK ' + this.config.nick);
-  this.raw('USER ' + this.config.user + ' 0 * : ' + this.config.realname);
+  this.raw({command: 'NICK', params: this.config.nick});
+  this.raw({command: 'USER', params: [
+    this.config.user, 0, '*', this.config.realname]});
 };
 
 Bot.prototype.on_disconnect = function() {
@@ -136,19 +158,20 @@ Bot.prototype.on_data = function(chunk) {
     var res = irc_lineparse_re.exec(line);
 
     var message = {
-      raw: line,
-      prefix: res[1], // servername or nick
-      username: res[2],
-      hostname: res[3],
-      command: res[4],
-      params: res[6]
-        ? res[5].split(' ').slice(1).concat(res[6])
-        : res[5].split(' ').slice(1)
+      raw: line, // Whole line
+      prefix: res[1], // complete prefix
+      nick: res[2], // or servername
+      username: res[3],
+      hostname: res[4],
+      command: res[5],
+      params: res[7]
+        ? res[6].split(' ').slice(1).concat(res[7])
+        : res[6].split(' ').slice(1)
     };
 
     switch (message.command) {
       case 'PING':
-        this.raw('PONG localhost');
+        this.raw({command:'PONG', params:'localhost'});
         break;
       case 'PRIVMSG':
         message.sender = message.params[0];
@@ -162,11 +185,11 @@ Bot.prototype.on_data = function(chunk) {
 
 // Actions
 Bot.prototype.send = function(channel, text) {
-  this.raw('PRIVMSG ' + channel + ' :' + text);
+  this.raw({command: 'PRIVMSG', params: [channel, text]});
 };
 
 Bot.prototype.join = function(channel) {
-  this.raw('JOIN ' + channel);
+  this.raw({command: 'JOIN', params: [channel]});
 };
 
 // Plugins
