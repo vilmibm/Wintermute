@@ -33,7 +33,7 @@ function Bot(config) {
     plugins_dir:      './plugins',
     default_plugins:  []
   };
-  obj.update(this.config, config);
+  obj_update(this.config, config);
 
   this.plugins = {};
   this.plugins.active = [];
@@ -110,7 +110,7 @@ Bot.prototype.raw = function(message) {
     console.log('Message too long: ' + message);
     return;
   }
-  if (typeOf(message) == 'string') {
+  if (typeof(message) == 'string') {
     this.connection.write(message + "\r\n", 'utf8');
   } else {
     this.connection.write(''
@@ -119,7 +119,7 @@ Bot.prototype.raw = function(message) {
           : ''
         + message.command
         + message.params
-          ? ' ' + typeOf(message.params) == 'string'
+          ? ' ' + typeof(message.params) == 'string'
             ? ':' + message.params
             : message.params.slice(0, -1).concat(':' + message.params.slice(-1)).join(' ')
           : ''
