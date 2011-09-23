@@ -41,28 +41,47 @@ function Bot(config) {
 
   this.buffer = '';
 
+  // Handlers that respond to low-level events
   this.on('connect', this.on_connect);
   this.on('disconnect', this.on_disconnect);
   this.on('data', this.on_data);
 
+  // Prepare basic message events for higher-level event handlers
   this.on('message', function(message){
+    // TODO: what if message has no .command?
     if (! /PING|PRIVMSG|NOTICE/.test(message)) {
       console.log('<', message);
     }
     this.emit(message.command, message);
   });
-  this.on('PING', funciton(message){
+
+  // Handlers that process specific IRC commands
+  this.on('PING', function(message){
     this.raw({command:'PONG', params:'localhost'});
   });
-  this.on('PRIVMSG', funciton(message){
-    message.sender = message.params[0];
+  this.on('PRIVMSG', function(message){
     message.text = message.params[1];
-    console.log('<', message.sender, ':', message.text);
+    if (message.params[0] == this.config.nick) {
+      emit('whisper', message);
+    } else {
+      message.channel = message.params[0];
+      emit('chat', message);
+    }
   });
-  this.on('NOTICE', funciton(message){
+  this.on('NOTICE', function(message){
     message.sender = message.params[0];
     message.text = message.params[1];
     console.log('!', message.sender, ':', message.text);
+  });
+
+  // Higher-level event handlers, usually triggered by IRC event handlers
+  this.on('whisper', function(message){
+    console.log(
+      '<', message.nick, 'whispers,', message.text);
+  });
+  this.on('chat', function(message){
+    console.log(
+      '< in', message.channel, '<' + message.nick + '>', message.text);
   });
 
   // FIXME: is this a node convention!? Can't we use "this_bot" or something?
@@ -190,7 +209,7 @@ Bot.prototype.on_data = function(chunk) {
         ? res[6].split(' ').slice(1).concat(res[7])
         : res[6].split(' ').slice(1)
     };
-    self.emit('message', message);
+    this.emit('message', message);
   }
 };
 
