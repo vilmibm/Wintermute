@@ -34,22 +34,26 @@ function Bot(config) {
   this.config.default_plugins.forEach(function(plugin_path) {
     var full_plugin_path = path.join(that.config.plugins_dir, plugin_path);
     try {
-      var plugin = require(full_plugin_path);
-      // TODO use this.emit('plugin_state_change', full_plugin_path, 'reload');
-      for (evnt in plugin.hooks) {
-        if (!plugin.hooks.hasOwnProperty(evnt)) { return; }
-        plugin.hooks[evnt].forEach(function(cb) {
-          that.on(evnt, cb);
-        });
-      }
-      that.plugins.active.push(full_plugin_path);
+      var plugin = require(full_plugin_path).plugin;
+      plugin.full_path = full_plugin_path;
+      // TODO should be plugin_path - .js
+      plugin.name = plugin.name || plugin_path;
+      that.plugins.active.push(plugin);
     }
     catch (exc) {
       console.error('Error loading plugin "'+full_plugin_path+'": '+exc);
+      // TODO this list needed?
       that.plugins.inactive.push(full_plugin_path);
     };
   });
 
+  // plugins
+  this.on('message', function(msg) {
+    this.emit_to_plugins('message', msg);
+  });
+
+  
+  
 }
 sys.inherits(Bot, events.EventEmitter);
 
@@ -73,7 +77,7 @@ Bot.prototype.disconnect = function() {
 
 Bot.prototype.raw = function(txt) {
   if (this.connection.readyState !== 'open') {
-    console.log('not connected');
+    console.error('raw: not connected');
     return;
   }
 
@@ -129,8 +133,17 @@ Bot.prototype.join = function(channel) {
   this.raw('JOIN ' + channel);
 };
 
-// plugins
-// TODO
+// Plugins
+Bot.prototype.emit_to_plugins = function() {
+  var evnt = arguments[0];
+  var bot = this;
+  var rest = Array.prototype.slice.call(arguments, 1);
+  var args_for_emit = [evnt, bot].concat(rest);
+  this.plugins.active.forEach(function(plugin) {
+    plugin.emit.apply(plugin, args_for_emit);
+  });
+};
+
 
 // personality
 // TODO
