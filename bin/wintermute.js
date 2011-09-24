@@ -50,7 +50,7 @@ function Bot(config) {
   // Prepare basic message events for higher-level event handlers
   this.on('message', function(message){
     // TODO: what if message has no .command?
-    if (! /PING|PRIVMSG|NOTICE/.test(message)) {
+    if (! /PING|PRIVMSG|NOTICE|MODE|\d{1,4}/.test(message.command)) {
       console.log('<', message);
     }
     this.emit(message.command, message);
@@ -215,7 +215,7 @@ Bot.prototype.on_data = function(chunk) {
     var res = irc_lineparse_re.exec(line);
 
     if (! res) {
-      console.log('Regex fail!', line);
+      console.error('RegExp fail!', line);
     }
 
     var message = {
