@@ -14,13 +14,13 @@ function clone() {
   for (var i in this) {
     if (!this.hasOwnProperty(i)) { continue; }
     if (this[i] && typeof this[i] == "object") {
-      newObj[i] = clone.call(this[i]);
+      new_obj[i] = clone.call(this[i]);
     }
     else {
-      newObj[i] = this[i]
+      new_obj[i] = this[i]
     }
   }
-  return newObj;
+  return new_obj;
 }
 
 function items(fn) {
@@ -77,6 +77,7 @@ function Bot(config) {
       console.log('<', message);
     }
     this.emit(message.command, message);
+    this.emit_to_plugins(message.command, message);
   });
 
   // Handlers that process specific IRC commands
@@ -86,10 +87,10 @@ function Bot(config) {
   this.on('PRIVMSG', function(message){
     message.text = message.params[1];
     if (message.params[0] == this.config.nick) {
-      emit('whisper', message);
+      this.emit('whisper', message);
     } else {
       message.channel = message.params[0];
-      emit('chat', message);
+      this.emit('chat', message);
     }
   });
   this.on('NOTICE', function(message){
@@ -108,9 +109,8 @@ function Bot(config) {
       '< in', message.channel, '<' + message.nick + '>', message.text);
   });
 
-  // FIXME: is this a node convention!? Can't we use "this_bot" or something?
+  // plugins
   var that = this;
-
   this.config.default_plugins.forEach(function(plugin_path) {
     var full_plugin_path = path.join(that.config.plugins_dir, plugin_path);
     try {
@@ -125,11 +125,6 @@ function Bot(config) {
       // TODO this list needed?
       that.plugins.inactive.push(full_plugin_path);
     };
-  });
-
-  // plugins
-  this.on('message', function(msg) {
-    this.emit_to_plugins('message', msg);
   });
 }
 sys.inherits(Bot, events.EventEmitter);
@@ -151,9 +146,6 @@ Bot.prototype.connect = function() {
         {key: fs.readFileSync(this.config.ssl_key_file)},
         onconnect);
   } else {
-    // FIXME it's bizarre that I set a connect handler AFTER calling the code
-    // that will establish the connection. Maybe I'm doing it wrong. But it
-    // works.
     this.connection = require('net').createConnection(
         this.config.port,
         this.config.host
