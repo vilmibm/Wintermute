@@ -36,6 +36,7 @@ function Bot(config) {
   };
   obj_update(this.config, config);
 
+
   this.plugins = {};
   this.plugins.active = [];
   this.plugins.inactive = [];
@@ -202,7 +203,6 @@ Bot.prototype.on_disconnect = function() {
 
 Bot.prototype.on_data = function(chunk) {
   this.buffer += chunk;
-
   while (this.buffer) {
     var offset = this.buffer.indexOf("\r\n");
     if (offset < 0) {
