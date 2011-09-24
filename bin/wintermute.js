@@ -58,7 +58,7 @@ function Bot(config) {
 
   // Handlers that process specific IRC commands
   this.on('PING', function(message){
-    this.raw({command:'PONG', params:'localhost'});
+    this.send({command:'PONG', params:'localhost'});
   });
   this.on('PRIVMSG', function(message){
     message.text = message.params[1];
@@ -148,12 +148,25 @@ Bot.prototype.disconnect = function() {
   }
 };
 
-Bot.prototype.raw = function(message) {
-  // message can be a string of characters to dump to the server, or an object with attributes:
+Bot.prototype.send = function(message) {
+  // message is an object with attributes:
   // prefix: string
   // command: string
   // params: string or Array of strings. If Array, only the last may contain
   // spaces.
+  return this.raw(''
+      + (message.prefix
+        ? ':' + message.prefix + ' '
+        : '')
+      + message.command
+      + (message.params
+        ? ' ' + (typeof(message.params) == 'string'
+          ? ':' + message.params
+          : message.params.slice(0, -1).concat(':' + message.params.slice(-1)).join(' '))
+        : ''));
+}
+
+Bot.prototype.raw = function(message) {
   if (this.connection.readyState !== 'open') {
     console.error('raw: not connected');
     return;
@@ -161,36 +174,26 @@ Bot.prototype.raw = function(message) {
 
   // TODO instead of this, break into multiple messages, if possible.
   if (message.length > 510) {
-    console.log('Message too long: ' + message);
+    console.error('Message too long: ' + message);
     return;
   }
-  if (typeof(message) == 'string') {
-    this.connection.write(message + "\r\n", 'utf8');
+  if (/PASS /.test(message)) {
+    console.log('> PASS (not displaying password)');
   } else {
-    this.connection.write(''
-        + (message.prefix
-          ? ':' + message.prefix + ' '
-          : '')
-        + message.command
-        + (message.params
-          ? ' ' + (typeof(message.params) == 'string'
-            ? ':' + message.params
-            : message.params.slice(0, -1).concat(':' + message.params.slice(-1)).join(' '))
-          : '')
-        + "\r\n",
-        'utf8');
+    console.log('>', message);
   }
+  this.connection.write(message + "\r\n", 'utf8');
 };
 
-// Events
+// Event handlers
 Bot.prototype.on_connect = function() {
   console.log('connected');
-  this.raw({command: 'NICK', params: this.config.nick});
-  this.raw({command: 'USER', params: [
-    this.config.user, 0, '*', this.config.realname]});
   if (this.config.password) {
-    this.raw({command: 'PASS', params: this.config.password});
+    this.send({command: 'PASS', params: this.config.password});
   }
+  this.send({command: 'NICK', params: this.config.nick});
+  this.send({command: 'USER', params: [
+    this.config.user, 0, '*', this.config.realname]});
 };
 
 Bot.prototype.on_disconnect = function() {
@@ -231,12 +234,12 @@ Bot.prototype.on_data = function(chunk) {
 };
 
 // Actions
-Bot.prototype.send = function(channel, text) {
-  this.raw({command: 'PRIVMSG', params: [channel, text]});
+Bot.prototype.say = function(channel, text) {
+  this.send({command: 'PRIVMSG', params: [channel, text]});
 };
 
 Bot.prototype.join = function(channel) {
-  this.raw({command: 'JOIN', params: [channel]});
+  this.send({command: 'JOIN', params: [channel]});
 };
 
 // Plugins
