@@ -3,7 +3,12 @@ var fs = require('fs');
 var path = require('path');
 var sys = require('sys');
 
-// TODO put this in lib/util.js
+
+// "main" portion at bottom
+
+// TODO abstract bot,irc stuff into lib/{bot,irc}.js
+
+// TODO we need a lib/util.js
 // these should all be called as:
   // fun.call(some_obj, [args, ])
 // why? because they *should* be Object.prototype funcs, but this breaks stuff
@@ -39,9 +44,6 @@ function update(obj) {
   items.call(obj_copy, function(k,v) { copy[k] = v; });
   return copy;
 }
-
-// "main" portion at bottom
-// TODO abstract bot,irc stuff into lib/{bot,irc}.js
 
 function Bot(config) {
   events.EventEmitter.call(this);
