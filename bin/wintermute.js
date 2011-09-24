@@ -110,31 +110,16 @@ function Bot(config) {
       '< in', message.channel, '<' + message.nick + '>', message.text);
   });
 
-  // plugins
-  // TODO needs generalization/cleanup
+  // plugin setup
   var that = this;
-  this.config.default_plugins.forEach(function(plugin_path) {
-    var full_plugin_path = path.join(that.config.plugins_dir, plugin_path);
-    try {
-      var plugin = require(full_plugin_path).plugin;
-      plugin.name = plugin_path;
-      that.plugins[full_plugin_path] = plugin;
-    }
-    catch (exc) {
-      console.error('Error loading plugin "'+full_plugin_path+'": '+exc);
-    };
-  });
+  this.config.default_plugins.forEach(function(x) { that.load_plugin.call(that, x) });
   // reload a plugin
-  this.on('PRIVMSG', function(message) {
-    var match = message.text.match(/^\.reload ([^ ]+)/); 
+  this.on('chat', function(message) {
+    var match = message.text.match(/^\.(reload|unload|load) +([^ ]+)/);
     if (match === null) { return; }
-    var plugin_path = match[1];
-    var full_plugin_path = path.join(this.config.plugins_dir, plugin_path);
-    delete require.cache[full_plugin_path];
-    delete this.plugins[full_plugin_path];
-    var plugin = require(full_plugin_path).plugin;
-    plugin.name = plugin_path;
-    this.plugins[full_plugin_path] = plugin;
+    var plugin_command = match[1];
+    var plugin_path = match[2];
+    this[plugin_command+'_plugin'](plugin_path);
   });
 }
 sys.inherits(Bot, events.EventEmitter);
@@ -277,6 +262,30 @@ Bot.prototype.emit_to_plugins = function() {
   items.call(this.plugins, function(full_plugin_path, plugin) {
     plugin.emit.apply(plugin, args_for_emit);
   });
+};
+
+Bot.prototype.load_plugin = function(plugin_path) {
+  console.log(this);
+  var full_plugin_path = path.join(this.config.plugins_dir, plugin_path);
+  try {
+    var plugin = require(full_plugin_path).plugin;
+    plugin.name = plugin_path;
+    this.plugins[full_plugin_path] = plugin;
+  }
+  catch (exc) {
+    console.error('Error loading plugin "'+full_plugin_path+'": '+exc);
+  };
+};
+
+Bot.prototype.unload_plugin = function(plugin_path) {
+  var full_plugin_path = path.join(this.config.plugins_dir, plugin_path);
+  delete require.cache[full_plugin_path];
+  delete this.plugins[full_plugin_path];
+}
+
+Bot.prototype.reload_plugin = function(plugin_path) {
+  this.unload_plugin(plugin_path);
+  this.load_plugin(plugin_path);
 };
 
 // personality
