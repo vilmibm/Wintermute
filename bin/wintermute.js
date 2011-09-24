@@ -60,10 +60,7 @@ function Bot(config) {
   };
   this.config = update.call(this.config, config);
 
-
   this.plugins = {};
-  this.plugins.active = [];
-  this.plugins.inactive = [];
 
   this.buffer = '';
 
@@ -90,9 +87,11 @@ function Bot(config) {
     message.text = message.params[1];
     if (message.params[0] == this.config.nick) {
       this.emit('whisper', message);
+      this.emit_to_plugins('whisper', message);
     } else {
       message.channel = message.params[0];
       this.emit('chat', message);
+      this.emit_to_plugins('chat', message);
     }
   });
   this.on('NOTICE', function(message){
@@ -112,21 +111,30 @@ function Bot(config) {
   });
 
   // plugins
+  // TODO needs generalization/cleanup
   var that = this;
   this.config.default_plugins.forEach(function(plugin_path) {
     var full_plugin_path = path.join(that.config.plugins_dir, plugin_path);
     try {
       var plugin = require(full_plugin_path).plugin;
-      plugin.full_path = full_plugin_path;
-      // TODO should be plugin_path - .js
-      plugin.name = plugin.name || plugin_path;
-      that.plugins.active.push(plugin);
+      plugin.name = plugin_path;
+      that.plugins[full_plugin_path] = plugin;
     }
     catch (exc) {
       console.error('Error loading plugin "'+full_plugin_path+'": '+exc);
-      // TODO this list needed?
-      that.plugins.inactive.push(full_plugin_path);
     };
+  });
+  // reload a plugin
+  this.on('PRIVMSG', function(message) {
+    var match = message.text.match(/^\.reload ([^ ]+)/); 
+    if (match === null) { return; }
+    var plugin_path = match[1];
+    var full_plugin_path = path.join(this.config.plugins_dir, plugin_path);
+    delete require.cache[full_plugin_path];
+    delete this.plugins[full_plugin_path];
+    var plugin = require(full_plugin_path).plugin;
+    plugin.name = plugin_path;
+    this.plugins[full_plugin_path] = plugin;
   });
 }
 sys.inherits(Bot, events.EventEmitter);
@@ -266,11 +274,10 @@ Bot.prototype.emit_to_plugins = function() {
   var bot = this;
   var rest = Array.prototype.slice.call(arguments, 1);
   var args_for_emit = [evnt, bot].concat(rest);
-  this.plugins.active.forEach(function(plugin) {
+  items.call(this.plugins, function(full_plugin_path, plugin) {
     plugin.emit.apply(plugin, args_for_emit);
   });
 };
-
 
 // personality
 // TODO
