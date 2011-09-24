@@ -3,15 +3,42 @@ var fs = require('fs');
 var path = require('path');
 var sys = require('sys');
 
-// FIXME this should probably go in lib/ but I'm not sure how that works
-function obj_update(obj, other) {
-	// Something like python's {}.update()
-	for (var i in other) {
-		obj[i] = other[i];
-	}
-  // Either return nothing to hint mutation, or return a clone of obj updated
-  // with other. (Opting for the former here...)
+// TODO put this in lib/util.js
+// these should all be called as:
+  // fun.call(some_obj, [args, ])
+// why? because they *should* be Object.prototype funcs, but this breaks stuff
+// occasionally.
+function clone() {
+  // perform deep copy of this
+  var new_obj = (this instanceof Array) ? [] : {};
+  for (var i in this) {
+    if (!this.hasOwnProperty(i)) { continue; }
+    if (this[i] && typeof this[i] == "object") {
+      newObj[i] = clone.call(this[i]);
+    }
+    else {
+      newObj[i] = this[i]
+    }
+  }
+  return newObj;
+}
+
+function items(fn) {
+  // iterate over k,v pairs of object
+  for (var key in this) {
+    if (this.hasOwnProperty(key)) {
+      fn(key, this[key]);
+    }
+  }
 };
+
+function update(obj) {
+  // extend this by obj and return extended object. Totally non-destructive.
+  var copy = clone.call(this);
+  var obj_copy = clone.call(obj);
+  items.call(obj_copy, function(k,v) { copy[k] = v; });
+  return copy;
+}
 
 // FIXME where should this live?
 // FIXME break up for documentation
@@ -34,7 +61,7 @@ function Bot(config) {
     plugins_dir:      './plugins',
     default_plugins:  []
   };
-  obj_update(this.config, config);
+  this.config = update.call(this.config, config);
 
 
   this.plugins = {};
