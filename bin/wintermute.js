@@ -40,13 +40,8 @@ function update(obj) {
   return copy;
 }
 
-// FIXME where should this live?
-// FIXME break up for documentation
-var irc_lineparse_re = /^(?::(([^@! ]*)(?:(?:!([^@]*))?@([^ ]*))?) )?([^ ]+)((?: [^: ][^ ]*){0,14})(?: :?(.*))?$/
-
 // "main" portion at bottom
-// TODO abstract bot,irc stuff into lib/
-// TODO move this file to bin/
+// TODO abstract bot,irc stuff into lib/{bot,irc}.js
 
 function Bot(config) {
   events.EventEmitter.call(this);
@@ -239,6 +234,8 @@ Bot.prototype.on_data = function(chunk) {
     this.buffer = this.buffer.slice(offset+2);
 
     // build a message object containing all the parts
+    // FIXME break up for documentation
+    var irc_lineparse_re = /^(?::(([^@! ]*)(?:(?:!([^@]*))?@([^ ]*))?) )?([^ ]+)((?: [^: ][^ ]*){0,14})(?: :?(.*))?$/
     var res = irc_lineparse_re.exec(line);
 
     if (! res) {
