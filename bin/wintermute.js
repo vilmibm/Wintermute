@@ -1,6 +1,5 @@
 var events = require('events');
 var fs = require('fs');
-var net = require('net');
 var path = require('path');
 var sys = require('sys');
 
@@ -30,6 +29,8 @@ function Bot(config) {
     nick:             'wintermute',
     user:             'wintermute',
     realname:         'tessier ashpool',
+    // openssl genrsa -out ryans-key.pem 1024
+    ssl_cert_file:    undefined,
     plugins_dir:      './plugins',
     default_plugins:  []
   };
@@ -107,20 +108,36 @@ function Bot(config) {
   this.on('message', function(msg) {
     this.emit_to_plugins('message', msg);
   });
-
-  
-  
 }
 sys.inherits(Bot, events.EventEmitter);
 
 // core Bot functionality
 Bot.prototype.connect = function() {
   var that = this;
-  this.connection = net.createConnection(this.config.port, this.config.host);
+  var onconnect = function() {
+    that.emit('connect');
+  };
+
+  if (this.config.ssl_key_file) {
+    // FIXME it's bizarre that .on('connect', onconnect) does not work with
+    // this the way it does for net.createConnection, and everything else does.
+    // What the heck is going on??
+    this.connection = require('tls').connect(
+        this.config.port,
+        this.config.host,
+        {key: fs.readFileSync(this.config.ssl_key_file)},
+        onconnect);
+  } else {
+    // FIXME it's bizarre that I set a connect handler AFTER calling the code
+    // that will establish the connection. Maybe I'm doing it wrong. But it
+    // works.
+    this.connection = require('net').createConnection(
+        this.config.port,
+        this.config.host
+        ).on('connect', onconnect);
+  }
   this.connection.setEncoding('utf8');
   this.connection.setTimeout(60*60*10);
-
-  this.connection.on('connect', function() {that.emit('connect')});
   this.connection.on('data', function(chunk) {that.emit('data', chunk)});
   this.connection.on('disconnect', function() {that.emit('disconnect')});
 };
