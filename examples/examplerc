@@ -3,5 +3,6 @@
   "user":"your_ad_username",
   "nick":"winteryou",
   "plugins_dir":"../plugins",
-  "default_plugins":["kudos"]
+  "default_plugins":["kudos"],
+  "default_channels":["#clug", "#bots"]
 }

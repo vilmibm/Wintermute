@@ -56,7 +56,8 @@ function Bot(config) {
     // openssl genrsa -out ryans-key.pem 1024
     ssl_cert_file:    undefined,
     plugins_dir:      '../plugins',
-    default_plugins:  []
+    default_plugins:  [],
+    default_channels:  []
   };
   this.config = update.call(this.config, config);
 
@@ -204,6 +205,11 @@ Bot.prototype.on_connect = function() {
   this.send({command: 'NICK', params: this.config.nick});
   this.send({command: 'USER', params: [
     this.config.user, 0, '*', this.config.realname]});
+
+  // auto join default channels
+  this.config.default_channels.forEach(function(channel) {
+    this.join(channel);
+  }, this);
 };
 
 Bot.prototype.on_disconnect = function() {
