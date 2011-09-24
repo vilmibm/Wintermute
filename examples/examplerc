@@ -2,6 +2,6 @@
   "password":"NopeChuckTesta",
   "user":"your_ad_username",
   "nick":"winteryou",
-  "plugins_dir":"/some/abs/path",
+  "plugins_dir":"../plugins",
   "default_plugins":["kudos"]
 }

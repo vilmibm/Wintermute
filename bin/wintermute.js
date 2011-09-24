@@ -55,7 +55,7 @@ function Bot(config) {
     realname:         'tessier ashpool',
     // openssl genrsa -out ryans-key.pem 1024
     ssl_cert_file:    undefined,
-    plugins_dir:      './plugins',
+    plugins_dir:      '../plugins',
     default_plugins:  []
   };
   this.config = update.call(this.config, config);

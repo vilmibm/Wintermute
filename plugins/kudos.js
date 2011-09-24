@@ -1,4 +1,4 @@
-var Plugin = require('/home/nksmith/wintermute/lib/wintermute').Plugin;
+var Plugin = require('../lib/wintermute').Plugin;
 var plugin = new Plugin();
 
 plugin.help = 'kudos and stuff';
