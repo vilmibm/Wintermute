@@ -159,21 +159,20 @@ Bot.prototype.disconnect = function() {
   }
 };
 
-Bot.prototype.send = function(message) {
-  // message is an object with attributes:
-  // prefix: string
-  // command: string
+Bot.prototype.send = function(command, params, prefix) {
+  // prefix: optional string
   // params: string or Array of strings. If Array, only the last may contain
   // spaces.
   return this.raw(''
-      + (message.prefix
-        ? ':' + message.prefix + ' '
+      + (prefix
+        ? ':' + prefix + ' '
         : '')
-      + message.command
-      + (message.params
-        ? ' ' + (typeof(message.params) == 'string'
-          ? ':' + message.params
-          : message.params.slice(0, -1).concat(':' + message.params.slice(-1)).join(' '))
+      + command
+      + (params
+        ? ' ' +
+          (typeof(params) == 'string'
+          ? ':' + params
+          : params.slice(0, -1).concat(':' + params.slice(-1)).join(' '))
         : ''));
 }
 
@@ -200,12 +199,12 @@ Bot.prototype.raw = function(message) {
 Bot.prototype.on_connect = function() {
   console.log('connected');
   if (this.config.password) {
-    this.send({command: 'PASS', params: this.config.password});
+    this.send('PASS', this.config.password);
   }
-  this.send({command: 'NICK', params: this.config.nick});
-  this.send({command: 'USER', params: [
-    this.config.user, 0, '*', this.config.realname]});
 
+  this.send('NICK', this.config.nick);
+  this.send('USER', [
+    this.config.user, 0, '*', this.config.realname]);
   // auto join default channels
   this.config.default_channels.forEach(function(channel) {
     this.join(channel);
@@ -275,11 +274,11 @@ Bot.prototype.on_data = function(chunk) {
 
 // Actions
 Bot.prototype.say = function(channel, text) {
-  this.send({command: 'PRIVMSG', params: [channel, text]});
+  this.send('PRIVMSG', [channel, text]);
 };
 
 Bot.prototype.join = function(channel) {
-  this.send({command: 'JOIN', params: [channel]});
+  this.send('JOIN', [channel]);
 };
 
 // Plugins
