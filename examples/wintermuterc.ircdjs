@@ -1,0 +1,12 @@
+{
+  "__install_npm":    "  curl http://npmjs.org/install.sh | sh  #",
+  "__install_ircdjs": "  npm install ircdjs  #",
+  "__start_ircd":     "  node node_modules/ircdjs/bin/ircd.js # run in  #",
+  "__start_bot":      "  node bin/wintermute.js examples/wintermuterc.ircdjs  #",
+  "host":"localhost",
+  "user":"youmute",
+  "nick":"youmute",
+  "plugins_dir":"../plugins",
+  "default_plugins":["kudos"],
+  "default_channels":["#bots"]
+}
