@@ -226,13 +226,35 @@ Bot.prototype.on_data = function(chunk) {
     var line = this.buffer.slice(0, offset);
     this.buffer = this.buffer.slice(offset+2);
 
+    // FIXME shouldn't this RE get built somewhere global-ish so we don't have
+    // to compile it for every data chunk?
+    //
     // build a message object containing all the parts
-    // FIXME break up for documentation
-    var irc_lineparse_re = /^(?::(([^@! ]*)(?:(?:!([^@]*))?@([^ ]*))?) )?([^ ]+)((?: [^: ][^ ]*){0,14})(?: :?(.*))?$/
+    // See RFC2812, Section 2.3.
+    var irc_lineparse_re = new RegExp(
+        // Match the whole line. Start.
+        "^" +
+        // Optional prefix and the space that separates it from the next thing.
+        // Prefix can be a servername, or nick[[!user]@host]
+        "(?::(([^@! ]*)(?:(?:!([^@]*))?@([^ ]*))?) )?" +
+        // IRC command (required)
+        "([^ ]+)" +
+        // Optional args, max 15, space separated. Last arg is the only one
+        // that may contain inner spaces. More than 15 words means remainder of
+        // words are part of 15th arg. Last arg may be indicated by a colon
+        // prefix instead. Pull the leading and last args out separately; we
+        // have to split the former on spaces.
+        "((?: [^: ][^ ]*){0,14})" + // stops matching on arg 15 or colon
+        "(?: :?(.*))?" + // catptures the rest, does not capture colon.
+        // EOL
+        "$"
+        );
+
     var res = irc_lineparse_re.exec(line);
 
     if (! res) {
-      console.error('RegExp fail!', line);
+      console.error('The server sent a line that does not look like IRC protocol:', line);
+      continue;
     }
 
     var message = {
@@ -242,9 +264,10 @@ Bot.prototype.on_data = function(chunk) {
       username: res[3],
       hostname: res[4],
       command: res[5],
-      params: res[7]
-        ? res[6].split(' ').slice(1).concat(res[7])
-        : res[6].split(' ').slice(1)
+      params: res[6].
+        split(' ').
+        slice(1).   // First char of args is always ' '
+        concat(res[7] ? res[7] : [])
     };
     this.emit('message', message);
   }
