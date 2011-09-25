@@ -301,7 +301,7 @@ Bot.prototype.reload_plugin = function(plugin_path) {
 // defaults to ~/.wintermuterc
 // or specify
 
-var rc = path.join(process.env.HOME, '.wintermuterc') || process.argv[2];
+var rc = process.argv[2] || path.join(process.env.HOME, '.wintermuterc');
 
 var config = {};
 try {
