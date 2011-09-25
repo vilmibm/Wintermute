@@ -314,8 +314,6 @@ try {
 var bot = new Bot(config);
 bot.connect();
 
-exports = bot;
-
 var repl = require('repl');
 repl.start('irc>').context.bot = bot;
 // vim: ts=2 sw=2 et :
